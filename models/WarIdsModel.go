@@ -6,7 +6,7 @@ import (
 )
 
 type WarIdsModel struct {
-	BaseDBmodel
+	BasePQDBmodel
 	name  string
 	Warid int
 }

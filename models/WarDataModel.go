@@ -7,7 +7,7 @@ import (
 )
 
 type WarDataModel struct {
-	BaseDBmodel
+	BasePQDBmodel
 	Id        int    `bson:"_id" form:"-" `
 	TeamA     string `form:"TeamA"`
 	TeamB     string `form:"TeamB"`
@@ -70,7 +70,7 @@ func (this *WarDataModel) Tablename() string {
 }
 
 func (this *WarDataModel) init() (err error) {
-	err = this.BaseDBmodel.init()
+	err = this.BasePQDBmodel.init()
 	if err != nil {
 		return
 	}

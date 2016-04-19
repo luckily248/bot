@@ -8,11 +8,11 @@ import (
 	_ "github.com/lib/pq"
 )
 
-type BasePGDBmodel struct {
+type BasePQDBmodel struct {
 	DB *sql.DB
 }
 
-func (this *BasePGDBmodel) init() (err error) {
+func (this *BasePQDBmodel) init() (err error) {
 	db, err := sql.Open("postgres", os.Getenv("DATABASE_URL"))
 	if err != nil {
 		return
