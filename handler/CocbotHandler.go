@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"gopkg.in/mgo.v2/bson"
 )
 
 var zerostar []string
@@ -289,7 +287,7 @@ func (this *ScoutHandler) handle(text []string) (result string, err error) {
 		return
 	}
 
-	err = models.UpdateWarData(content.Id, bson.M{"$set": bson.M{fmt.Sprintf("battles.%d.scoutstate", num1): "needscout"}})
+	err = models(content.Id, num1, "needscout")
 	if err != nil {
 		fmt.Println(err.Error())
 		err = errors.New("server error")
