@@ -84,7 +84,7 @@ func AddWarData(teama string, teamb string, cout int) (id int, err error) {
 	}
 	defer wardata.DB.Close()
 
-	rows := wardata.DB.QueryRow("INSERT INTO WarDataModel(TeamA,TeamB,BattleLen,IsEnable,Timestamp,Begintime) VALUES($1,$2,$3,$4,$5) RETURNING id`, teama, teamb, cout, true, time.Now(), time.Now().Add(23*time.Hour)")
+	rows := wardata.DB.QueryRow("INSERT INTO wardatamodel(TeamA,TeamB,BattleLen,IsEnable,Timestamp,Begintime) VALUES($1,$2,$3,$4,$5,$6) RETURNING id", teama, teamb, cout, true, time.Now(), time.Now().Add(23*time.Hour))
 	err = rows.Scan(&id)
 	if err != nil {
 		return
@@ -92,11 +92,7 @@ func AddWarData(teama string, teamb string, cout int) (id int, err error) {
 	battle := &Battle{}
 	battle.Init()
 	for i := 1; i < cout+1; i++ {
-		stmt1, err := wardata.DB.Prepare("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)")
-		if err != nil {
-			break
-		}
-		_, err = stmt1.Exec(id, i, battle.Scoutstate)
+		_, err = wardata.DB.Query("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)", id, i, battle.Scoutstate)
 		if err != nil {
 			break
 		}
@@ -130,7 +126,8 @@ func GetWarData(warid int) (content *WarDataModel, err error) {
 	}
 	defer wardata.DB.Close()
 	rows := wardata.DB.QueryRow("SELECT * FROM WarDataModel WHERE ID=$1", warid)
-	err = rows.Scan(wardata.Id, wardata.TeamA, wardata.TeamB, wardata.IsEnable, wardata.Timestamp, wardata.Begintime)
+	content = &WarDataModel{}
+	err = rows.Scan(&content.Id, &content.TeamA, &content.TeamB, &content.IsEnable, &content.Timestamp, &content.Begintime, &content.BattleLen)
 	if err != nil {
 		return
 	}
@@ -143,8 +140,9 @@ func GetWarDatabyclanname(clanname string) (content *WarDataModel, err error) {
 		return
 	}
 	defer wardata.DB.Close()
-	rows := wardata.DB.QueryRow("SELECT * FROM WarDataModel WHERE TeamA=$1 LIMIT 1 ORDER Timestamp DESC", clanname)
-	err = rows.Scan(wardata.Id, wardata.TeamA, wardata.TeamB, wardata.IsEnable, wardata.Timestamp, wardata.Begintime)
+	rows := wardata.DB.QueryRow("SELECT * FROM WarDataModel WHERE TeamA=$1 ORDER BY Timestamp DESC", clanname)
+	content = &WarDataModel{}
+	err = rows.Scan(&content.Id, &content.TeamA, &content.TeamB, &content.IsEnable, &content.Timestamp, &content.Begintime, &content.BattleLen)
 	if err != nil {
 		return
 	}
@@ -158,13 +156,13 @@ func GetAllBattlebyId(warid int) (battles []*Battle, err error) {
 	}
 	defer wardata.DB.Close()
 
-	rows, err := wardata.DB.Query("SELECT * FROM Battle WHERE WarId=$1 ORDER BattleNO ASC", warid)
+	rows, err := wardata.DB.Query("SELECT * FROM Battle WHERE WarId=$1 ORDER By BattleNO ASC", warid)
 	if err != nil {
 		return
 	}
 	for rows.Next() {
 		battle := &Battle{}
-		err = rows.Scan(&battle.WarId, &battle.BattleNo, &battle.Scoutstate)
+		err = rows.Scan(&battle.WarId, &battle.Scoutstate, &battle.BattleNo)
 		if err != nil {
 			break
 		}
@@ -172,7 +170,7 @@ func GetAllBattlebyId(warid int) (battles []*Battle, err error) {
 	}
 	return
 }
-func GetAllCallerbyId(warid int) (callers [][]*Caller, err error) {
+func GetAllCallerbyId(warid int) (callers map[int][]*Caller, err error) {
 	wardata := &WarDataModel{}
 	err = wardata.init()
 	if err != nil {
@@ -180,18 +178,24 @@ func GetAllCallerbyId(warid int) (callers [][]*Caller, err error) {
 	}
 	defer wardata.DB.Close()
 
-	rows, err := wardata.DB.Query("SELECT * FROM Caller WHERE WarId=$1 ORDER BattleNO ASC", warid)
+	rows, err := wardata.DB.Query("SELECT * FROM Caller WHERE WarId=$1 ORDER BY BattleNO ASC", warid)
 	if err != nil {
 		return
 	}
+	callers = map[int][]*Caller{}
 	for rows.Next() {
 		caller := &Caller{}
-		err = rows.Scan(&caller.WarId, &caller.BattleNo, &caller.Callername, &caller.Starstate, &caller.Calledtime)
+		err = rows.Scan(&caller.WarId, &caller.Callername, &caller.Starstate, &caller.Calledtime, &caller.BattleNo)
 		if err != nil {
 			break
 		}
+		_, exists := callers[caller.BattleNo]
+		if !exists {
+			callers[caller.BattleNo] = make([]*Caller, 0)
+		}
 		callers[caller.BattleNo] = append(callers[caller.BattleNo], caller)
 	}
+
 	return
 }
 func DelWarDatabyWarid(warid int) (err error) {
@@ -234,7 +238,7 @@ func UpdateWarData(wardata *WarDataModel) (err error) {
 		return
 	}
 	defer wardata.DB.Close()
-	stmt, err := wardata.DB.Prepare("update WarDataModel set TeamA=$1 TeamB=$2 IsEnable=$3 Timestamp=$4 Begintime=$5 where WarId=$6")
+	stmt, err := wardata.DB.Prepare("update WarDataModel set TeamA=$1,TeamB=$2,IsEnable=$3,Timestamp=$4,Begintime=$5 where id=$6")
 	if err != nil {
 		return
 	}
@@ -263,11 +267,7 @@ func UpdateBattleCountbyId(warid int, cout int) (err error) {
 	battle := &Battle{}
 	battle.Init()
 	for i := 1; i < cout+1; i++ {
-		stmt1, err := wardata.DB.Prepare("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)")
-		if err != nil {
-			break
-		}
-		_, err = stmt1.Exec(warid, i, battle.Scoutstate)
+		_, err = wardata.DB.Query("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)", warid, i, battle.Scoutstate)
 		if err != nil {
 			break
 		}
@@ -281,7 +281,7 @@ func UpdateBattle(warid int, battleno int, scoutstate string) (err error) {
 		return
 	}
 	defer wardata.DB.Close()
-	stmt, err := wardata.DB.Prepare("update Battle set Scoutstate=$1 where WarId=$2 BattleNo=$3")
+	stmt, err := wardata.DB.Prepare("update Battle set Scoutstate=$1 where WarId=$2 AND BattleNo=$3")
 	if err != nil {
 		return
 	}
@@ -298,7 +298,7 @@ func UpdateCaller(caller *Caller) (err error) {
 		return
 	}
 	defer wardata.DB.Close()
-	stmt, err := wardata.DB.Prepare("update Caller set Starstate=$1 Calledtime=$2 where WarId=$3 BattleNo=$4 Callername=$5")
+	stmt, err := wardata.DB.Prepare("update Caller set Starstate=$1,Calledtime=$2 where WarId=$3 AND BattleNo=$4 AND Callername=$5")
 	if err != nil {
 		return
 	}
