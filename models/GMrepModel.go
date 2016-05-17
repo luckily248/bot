@@ -14,8 +14,9 @@ type GMrepModel struct {
 	Bot_id string `json:"bot_id"`
 }
 
-func (this *GMrepModel) Init() {
-	this.Bot_id = "90af1423a7b97665968ad4bcdd" //init botid
+func (this *GMrepModel) InitbyGID(gid string) {
+	mapforGroupName := map[string]string{"19624531": "d9c55c1ed0d017b645908fac5f", "15529154": "90af1423a7b97665968ad4bcdd", "12000977": "72693bab1250b6b353d66947f1", "14806448": "7080dbdf1ca3f3e0f2fd67f16d"}
+	this.Bot_id = mapforGroupName[gid]
 	return
 }
 func (this *GMrepModel) SetText(text string) {

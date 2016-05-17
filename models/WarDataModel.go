@@ -49,18 +49,18 @@ func (this *Caller) Init() {
 func (this *Caller) GetStarstate() string {
 	switch this.Starstate {
 	case -1:
-		return "ZZZ"
+		return "\U0001F4A4\U0001F4A4\U0001F4A4"
 	case 0:
-		return "XXX"
+		return "\U00002734\U00002734\U00002734"
 	case 1:
-		return "OXX"
+		return "\U00002B50\U00002734\U00002734"
 	case 2:
-		return "OOX"
+		return "\U00002B50\U00002B50\U00002734"
 	case 3:
-		return "OOO"
+		return "\U00002B50\U00002B50\U00002B50"
 
 	}
-	return "ZZZ"
+	return "\U0001F4A4\U0001F4A4\U0001F4A4"
 
 }
 
@@ -92,7 +92,11 @@ func AddWarData(teama string, teamb string, cout int) (id int, err error) {
 	battle := &Battle{}
 	battle.Init()
 	for i := 1; i < cout+1; i++ {
-		_, err = wardata.DB.Query("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)", id, i, battle.Scoutstate)
+		r, err := wardata.DB.Query("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)", id, i, battle.Scoutstate)
+		if err != nil {
+			break
+		}
+		err = r.Close()
 		if err != nil {
 			break
 		}
@@ -256,7 +260,16 @@ func UpdateBattleCountbyId(warid int, cout int) (err error) {
 	}
 	defer wardata.DB.Close()
 
-	stmt, err := wardata.DB.Prepare("delete from Battle where WarId=$1")
+	stmt, err := wardata.DB.Prepare("update WarDataModel set BattleLen=$1 where id=$2")
+	if err != nil {
+		return
+	}
+	_, err = stmt.Exec(cout, warid)
+	if err != nil {
+		return
+	}
+
+	stmt, err = wardata.DB.Prepare("delete from Battle where WarId=$1")
 	if err != nil {
 		return
 	}
@@ -267,7 +280,11 @@ func UpdateBattleCountbyId(warid int, cout int) (err error) {
 	battle := &Battle{}
 	battle.Init()
 	for i := 1; i < cout+1; i++ {
-		_, err = wardata.DB.Query("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)", warid, i, battle.Scoutstate)
+		r, err := wardata.DB.Query("INSERT INTO Battle(WarId,BattleNo,Scoutstate) VALUES($1,$2,$3)", warid, i, battle.Scoutstate)
+		if err != nil {
+			break
+		}
+		err = r.Close()
 		if err != nil {
 			break
 		}

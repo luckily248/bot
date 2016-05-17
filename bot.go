@@ -1,4 +1,4 @@
-package main
+package bot
 
 import (
 	"bot/handler"
@@ -9,17 +9,17 @@ import (
 	"html"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 	"unicode/utf8"
 )
 
-func main() {
-
+func Run() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
 	})
 	http.HandleFunc("/bot", WarDataController)
-	http.ListenAndServe(":8888", nil)
+	http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 }
 func WarDataController(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
@@ -44,10 +44,14 @@ func WarDataController(w http.ResponseWriter, r *http.Request) {
 	if !strings.HasPrefix(rec.Text, "!") {
 		return
 	}
+	go handle(rec)
+	return
+}
+func handle(rec models.GMrecModel) {
 	reptext, err := handler.HandlecocText(rec)
 	fmt.Printf("reptextlen:%d\n", utf8.RuneCountInString(reptext))
 	rep := &models.GMrepModel{}
-	rep.Init()
+	rep.InitbyGID(rec.Group_id)
 	if err != nil {
 		rep.SetText(err.Error())
 		fmt.Printf("err:%s\n", err.Error())
@@ -61,8 +65,7 @@ func WarDataController(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	fmt.Println(string(buff))
-	go httpPost(buff)
-	return
+	httpPost(buff)
 }
 func httpPost(rep []byte) {
 	resp, err := http.Post("https://api.groupme.com/v3/bots/post",

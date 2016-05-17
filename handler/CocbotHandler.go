@@ -87,7 +87,7 @@ func (this *MainHandler) init(rec models.GMrecModel) {
 }
 
 func (this *MainHandler) getGroupName() string {
-	mapforGroupName := map[string]string{"19624531": "luckbot"}
+	mapforGroupName := map[string]string{"19624531": "luckbot", "15529154": "Cha siew", "12000977": "Cha siew", "14806448": "Cha siew"}
 	for k, v := range mapforGroupName {
 		//fmt.Printf("gid:%s\n", this.rec.Group_id)
 		//fmt.Printf("gn:%s\n", v)
@@ -109,7 +109,7 @@ func (this *HelpHandler) handle(text []string) (result string, err error) {
 	for _, handler := range mainhandler.allcommands {
 		resultslice = append(resultslice, handler.getHelp())
 	}
-	result = strings.Join(resultslice, "\n")
+	result = strings.Join(resultslice, "\n\n")
 	return
 }
 func (this *HelpHandler) getCommands() []string {
@@ -145,10 +145,11 @@ func (this *NewwarHandler) handle(text []string) (result string, err error) {
 		err = errors.New("server error")
 	} else {
 		content, err := models.GetWarData(id)
+		nylocation, _ := time.LoadLocation("America/New_York")
 		if err == nil {
 			fmt.Printf("now time:%v\n", time.Now())
 			fmt.Printf("default time:%v\n", content.Begintime)
-			result = fmt.Sprintf("War #%d Created \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, cout, cout, content.Begintime.Format("3:04PM MST 1/2/2006"))
+			result = fmt.Sprintf("War #%d Created \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, cout, cout, content.Begintime.In(nylocation).Format("3:04PM MST 1/2/2006"))
 		}
 	}
 
@@ -190,19 +191,20 @@ func (this *ShowwarHandler) handle(text []string) (result string, err error) {
 		return
 	}
 	if len(text) == 1 {
+		nylocation, _ := time.LoadLocation("America/New_York")
 		result = fmt.Sprintf("War #%d  \n %s VS %s \n %d vs %d \n War starts %s\n",
 			content.Id,
 			content.TeamA,
 			content.TeamB,
 			content.BattleLen,
 			content.BattleLen,
-			content.Begintime.Format("3:04PM MST 1/2/2006"))
+			content.Begintime.In(nylocation).Format("3:04PM MST 1/2/2006"))
 		battlesresult := ""
-		for num, battle := range battles {
+		for num, _ := range battles {
 			hightstar := -1
-			hightstars := "ZZZ"
-			lineresult := fmt.Sprintf("||%d.%s ", num+1, battle.Scoutstate)
-			for _, caller := range acallers[num] {
+			hightstars := "\U0001F4A4\U0001F4A4\U0001F4A4"
+			lineresult := fmt.Sprintf("||%d.%s ", num+1, "")
+			for _, caller := range acallers[num+1] {
 				if caller.Starstate > -1 && caller.Starstate < 4 {
 					if caller.Starstate > hightstar {
 						hightstar = caller.Starstate
@@ -210,10 +212,10 @@ func (this *ShowwarHandler) handle(text []string) (result string, err error) {
 					}
 					lineresult = lineresult + fmt.Sprintf("|%s %s", caller.Callername, caller.GetStarstate())
 				} else {
-					if time.Now().After(caller.Calledtime.Add(6 * time.Hour)) {
+					if time.Now().After(caller.Calledtime.Add(4 * time.Hour)) {
 						lineresult = lineresult + fmt.Sprintf("|%s expried", caller.Callername)
 					} else {
-						expried := caller.Calledtime.Add(6 * time.Hour).Sub(time.Now())
+						expried := caller.Calledtime.Add(4 * time.Hour).Sub(time.Now())
 						lineresult = lineresult + fmt.Sprintf("|%s %dh%dm ", caller.Callername, int(expried.Hours()), int(math.Mod(expried.Minutes(), 60)))
 					}
 				}
@@ -229,16 +231,26 @@ func (this *ShowwarHandler) handle(text []string) (result string, err error) {
 			if num > content.BattleLen {
 				err = errors.New(fmt.Sprintf("last one is %d\n", content.BattleLen))
 			} else {
-				battle := battles[num-1]
-				result = fmt.Sprintf("%d.%s ", num, battle.Scoutstate)
+				hightstar := -1
+				hightstars := "\U0001F4A4\U0001F4A4\U0001F4A4"
+				lineresult := fmt.Sprintf("||%d.%s ", num, "")
 				for _, caller := range acallers[num] {
-					if time.Now().After(caller.Calledtime.Add(6 * time.Hour)) {
-						result = result + fmt.Sprintf("%s expried")
+					if caller.Starstate > -1 && caller.Starstate < 4 {
+						if caller.Starstate > hightstar {
+							hightstar = caller.Starstate
+							hightstars = caller.GetStarstate()
+						}
+						lineresult = lineresult + fmt.Sprintf("|%s %s", caller.Callername, caller.GetStarstate())
 					} else {
-						expried := caller.Calledtime.Add(6 * time.Hour).Sub(time.Now())
-						result = result + fmt.Sprintf("%s %sh%sm ", caller.Callername, expried.Hours(), expried.Minutes())
+						if time.Now().After(caller.Calledtime.Add(4 * time.Hour)) {
+							lineresult = lineresult + fmt.Sprintf("|%s expried", caller.Callername)
+						} else {
+							expried := caller.Calledtime.Add(4 * time.Hour).Sub(time.Now())
+							lineresult = lineresult + fmt.Sprintf("|%s %dh%dm ", caller.Callername, int(expried.Hours()), int(math.Mod(expried.Minutes(), 60)))
+						}
 					}
 				}
+				result = hightstars + lineresult + "\n"
 			}
 		}
 	}
@@ -343,12 +355,16 @@ func (this *CallHandler) handle(text []string) (result string, err error) {
 			newcallnum = num
 		}
 	}
+	calledtime := time.Now()
+	if calledtime.Before(content.Begintime) {
+		calledtime = content.Begintime
+	}
 
 	if newcallnum == -1 {
-		newcallp := &models.Caller{content.Id, num1, mainhandler.rec.Name, -1, time.Now()}
+		newcallp := &models.Caller{content.Id, num1, mainhandler.rec.Name, -1, calledtime}
 		err = models.AddCaller(newcallp)
 	} else {
-		acallers[num1][newcallnum].Calledtime = time.Now()
+		acallers[num1][newcallnum].Calledtime = calledtime
 		err = models.UpdateCaller(acallers[num1][newcallnum])
 	}
 
@@ -479,6 +495,10 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 		err = errors.New("group not found groupid:" + mainhandler.rec.Group_id)
 		return
 	}
+	content, err := models.GetWarDatabyclanname(groupname)
+	if err != nil {
+		return
+	}
 	if len(text) < 3 {
 		err = errors.New("i need more info\n" + this.getHelp())
 		return
@@ -488,14 +508,14 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 		err = errors.New("arg2 must be number\n" + this.getHelp())
 		return
 	}
+	nylocation, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		return
+	}
 	num2, err := strconv.Atoi(text[2])
 	isTime := strings.HasSuffix(text[2], "am") || strings.HasSuffix(text[2], "pm")
 	if (err != nil || num2 < 0) && !isTime {
 		err = errors.New("arg3 must be number or time(endwith am/pm)\n" + this.getHelp())
-		return
-	}
-	content, err := models.GetWarDatabyclanname(groupname)
-	if err != nil {
 		return
 	}
 
@@ -514,7 +534,8 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 			} else if !content.IsEnable {
 				result = "no war being"
 			} else {
-				result = fmt.Sprintf("War #%d Edited \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, content.BattleLen, content.BattleLen, content.Begintime.Format("3:04PM MST 1/2/2006"))
+				nylocation, _ := time.LoadLocation("America/New_York")
+				result = fmt.Sprintf("War #%d Edited \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, content.BattleLen, content.BattleLen, content.Begintime.In(nylocation).Format("3:04PM MST 1/2/2006"))
 			}
 		}
 	} else if isTime {
@@ -523,19 +544,22 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 		if strings.HasSuffix(text[2], "am") {
 			fmt.Printf("trim time:%s\n", strings.Trim(text[2], "am"))
 			h, err = strconv.Atoi(strings.Trim(text[2], "am"))
-			if err != nil || h < 0 {
+			if err != nil || h < 0 || h >= 1260 || (h >= 13 && h < 100) {
 				err = errors.New("wrong time format")
 			} else {
 				mi := 0
-				if h > 12 {
+				if h > 13 {
 					mi = int(math.Mod(float64(h), 100))
 					h = int(h / 100)
+				}
+				if h == 12 {
+					h = 0
 				}
 				y, m, d := now.Date()
 				if now.Hour()*60+now.Minute() > h*60+mi { //if befor now so will be tmw
 					d++
 				}
-				newtime := time.Date(y, m, d, h, mi, 0, 0, time.Local)
+				newtime := time.Date(y, m, d, h, mi, 0, 0, nylocation)
 				content.Begintime = newtime
 				err := models.UpdateWarData(content)
 				if err == nil {
@@ -546,7 +570,8 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 					} else if !content.IsEnable {
 						result = "no war being"
 					} else {
-						result = fmt.Sprintf("War #%d Edited \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, content.BattleLen, content.BattleLen, content.Begintime.Format("3:04PM MST 1/2/2006"))
+						nylocation, _ := time.LoadLocation("America/New_York")
+						result = fmt.Sprintf("War #%d Edited \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, content.BattleLen, content.BattleLen, content.Begintime.In(nylocation).Format("3:04PM MST 1/2/2006"))
 					}
 				}
 			}
@@ -554,13 +579,16 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 
 			h, err = strconv.Atoi(strings.Trim(text[2], "pm"))
 			fmt.Printf("trim time:%d\n", h)
-			if err != nil || h < 0 {
+			if err != nil || h < 0 || h >= 1260 || (h >= 13 && h < 100) {
 				err = errors.New("wrong time format")
 			} else {
 				mi := 0
-				if h > 12 {
+				if h > 13 {
 					mi = int(math.Mod(float64(h), 100))
 					h = int(h / 100)
+				}
+				if h == 12 {
+					h = 0
 				}
 				h = h + 12
 				y, m, d := now.Date()
@@ -568,7 +596,7 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 					d++
 				}
 				fmt.Printf("trim time mi:%d\n", mi)
-				newtime := time.Date(y, m, d, h, mi, 0, 0, time.Local)
+				newtime := time.Date(y, m, d, h, mi, 0, 0, nylocation)
 				content.Begintime = newtime
 				err := models.UpdateWarData(content)
 				if err == nil {
@@ -579,7 +607,8 @@ func (this *EditwarHandler) handle(text []string) (result string, err error) {
 					} else if !content.IsEnable {
 						result = "no war being"
 					} else {
-						result = fmt.Sprintf("War #%d Edited \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, content.BattleLen, content.BattleLen, content.Begintime.Format("3:04PM MST 1/2/2006"))
+						nylocation, _ := time.LoadLocation("America/New_York")
+						result = fmt.Sprintf("War #%d Edited \n %s VS %s \n %d vs %d \n War starts %s", content.Id, content.TeamA, content.TeamB, content.BattleLen, content.BattleLen, content.Begintime.In(nylocation).Format("3:04PM MST 1/2/2006"))
 					}
 				}
 			}
@@ -654,18 +683,19 @@ func (this *OpenedwarHandler) handle(text []string) (result string, err error) {
 	if err != nil {
 		return
 	}
+	nylocation, _ := time.LoadLocation("America/New_York")
 	result = fmt.Sprintf("War #%d  \n %s VS %s \n %d vs %d \n War starts %s\n",
 		content.Id,
 		content.TeamA,
 		content.TeamB,
 		content.BattleLen,
 		content.BattleLen,
-		content.Begintime.Format("3:04PM MST 1/2/2006"))
+		content.Begintime.In(nylocation).Format("3:04PM MST 1/2/2006"))
 
 	battlesresult := ""
 	for num, battle := range battles {
 		hightstar := -1
-		hightstars := "ZZZ"
+		hightstars := "\U0001F4A4\U0001F4A4\U0001F4A4"
 		called := false
 		lineresult := fmt.Sprintf("||%d.%s ", num+1, battle.Scoutstate)
 		for _, caller := range acallers[num+1] {
@@ -676,7 +706,7 @@ func (this *OpenedwarHandler) handle(text []string) (result string, err error) {
 				}
 				lineresult = lineresult + fmt.Sprintf("|%s %s", caller.Callername, caller.GetStarstate())
 			} else {
-				if time.Now().After(caller.Calledtime.Add(6 * time.Hour)) {
+				if time.Now().After(caller.Calledtime.Add(4 * time.Hour)) {
 					continue
 				} else {
 					called = true
