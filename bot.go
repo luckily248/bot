@@ -1,8 +1,6 @@
 package bot
 
 import (
-	"bot/handler"
-	"bot/models"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -12,6 +10,9 @@ import (
 	"os"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/luckily248/bot/handler"
+	"github.com/luckily248/bot/models"
 )
 
 func Run() {

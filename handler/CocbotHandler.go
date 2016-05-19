@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"bot/models"
 	"errors"
 	"fmt"
 	"math"
@@ -9,6 +8,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/luckily248/bot/models"
 )
 
 var zerostar []string
