@@ -236,6 +236,30 @@ func DelWarDatabyWarid(warid int) (err error) {
 	}
 	return
 }
+func DelCallbyNo(warid int, position int) (err error) {
+	wardata := &WarDataModel{}
+	err = wardata.init()
+	if err != nil {
+		return
+	}
+	defer wardata.DB.Close()
+	stmt, err := wardata.DB.Prepare("delete from Caller where WarId=$1 AND BattleNo=$2")
+	if err != nil {
+		return
+	}
+	result, err := stmt.Exec(warid, position)
+	if err != nil {
+		return
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return
+	} else if affected == 0 {
+		err = errors.New("no call there")
+		return
+	}
+	return
+}
 func DelCallbyid(warid int, position int, callername string) (err error) {
 	wardata := &WarDataModel{}
 	err = wardata.init()

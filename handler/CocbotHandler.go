@@ -16,6 +16,7 @@ var zerostar []string
 var onestar []string
 var twostar []string
 var threestar []string
+var whitelist []string
 
 func init() {
 	zerostar = []string{
@@ -31,6 +32,16 @@ func init() {
 	threestar = []string{
 		"Nice hit!!",
 		"Well play"}
+	whitelist = []string{"8681334", "", "", ""}
+
+}
+func IsWhiteList(name string) bool {
+	for _, wname := range whitelist {
+		if wname == name {
+			return true
+		}
+	}
+	return false
 }
 
 type CocbotHandler interface {
@@ -517,11 +528,22 @@ func (this *DelcallHandler) handle(text []string) (result string, err error) {
 		return
 	}
 
-	err = models.DelCallbyid(content.Id, num, mainhandler.rec.Name)
+	caller := ""
+	if IsWhiteList(mainhandler.rec.User_id) {
+		err = models.DelCallbyNo(content.Id, num)
+	} else {
+		err = models.DelCallbyid(content.Id, num, mainhandler.rec.Name)
+		caller = mainhandler.rec.Name
+	}
 	if err != nil {
 		return
 	}
-	result = fmt.Sprintf("Call in #%d by %s deleted", num, mainhandler.rec.Name)
+	if caller != "" {
+		result = fmt.Sprintf("Call in #%d by %s is deleted ", num, caller)
+	} else {
+		result = fmt.Sprintf("Call in #%d all deleted ", num)
+	}
+
 	return
 
 }
