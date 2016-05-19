@@ -32,7 +32,7 @@ func init() {
 	threestar = []string{
 		"Nice hit!!",
 		"Well play"}
-	whitelist = []string{"8681334", "", "", ""}
+	whitelist = []string{"8681334", "33577284", "23564677", ""} //law patt tom
 
 }
 func IsWhiteList(name string) bool {
