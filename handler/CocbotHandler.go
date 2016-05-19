@@ -75,9 +75,8 @@ func (this *MainHandler) init(rec models.GMrecModel) {
 	this.allcommands = append(this.allcommands, &HelpHandler{})
 	this.allcommands = append(this.allcommands, &NewwarHandler{})
 	this.allcommands = append(this.allcommands, &EditwarHandler{})
-	this.allcommands = append(this.allcommands, &DelwarHandler{})
+	this.allcommands = append(this.allcommands, &DelcallHandler{})
 	this.allcommands = append(this.allcommands, &ShowwarHandler{})
-	this.allcommands = append(this.allcommands, &ScoutHandler{})
 	this.allcommands = append(this.allcommands, &StarHandler{})
 	this.allcommands = append(this.allcommands, &CallHandler{})
 	this.allcommands = append(this.allcommands, &TimerHandler{})
@@ -264,6 +263,7 @@ func (this *ShowwarHandler) getHelp() string {
 	return "!show [:number]\n for show current war condition ,show all or just what u want\n usage:\n !show\n !show 1"
 }
 
+//not use
 type ScoutHandler struct {
 }
 
@@ -460,6 +460,7 @@ func (this *StarHandler) getHelp() string {
 	return "!star [:number] [:number]\n for finish attack someone \n usage:\n !star 1 0"
 }
 
+//not use
 type DelwarHandler struct {
 }
 
@@ -484,6 +485,50 @@ func (this *DelwarHandler) getCommands() []string {
 }
 func (this *DelwarHandler) getHelp() string {
 	return "!del [:number] \n for del a War \n usage: \n !del 5 "
+}
+
+type DelcallHandler struct {
+}
+
+func (this *DelcallHandler) handle(text []string) (result string, err error) {
+	groupname := mainhandler.getGroupName()
+	if groupname == "" {
+		err = errors.New("group not found groupid:" + mainhandler.rec.Group_id)
+		return
+	}
+	content, err := models.GetWarDatabyclanname(groupname)
+	if err != nil {
+		fmt.Println(err.Error())
+		err = errors.New("server error")
+		return
+	}
+	if !content.IsEnable {
+		result = "no war being"
+		return
+	}
+	if len(text) < 2 {
+		err = errors.New("i need more info\n" + this.getHelp())
+		return
+	}
+	num, err := strconv.Atoi(text[1])
+	if err != nil || num < 0 {
+		err = errors.New("arg2 must be number\n" + this.getHelp())
+		return
+	}
+
+	err = models.DelCallbyid(content.Id, num, mainhandler.rec.Name)
+	if err != nil {
+		return
+	}
+	result = fmt.Sprintf("Call in #%d by %s deleted", num, mainhandler.rec.Name)
+	return
+
+}
+func (this *DelcallHandler) getCommands() []string {
+	return []string{"!del"}
+}
+func (this *DelcallHandler) getHelp() string {
+	return "!del [:number] \n for del a call in position\n usage: \n !del 5 "
 }
 
 type EditwarHandler struct {
@@ -693,11 +738,11 @@ func (this *OpenedwarHandler) handle(text []string) (result string, err error) {
 		content.Begintime.In(nylocation).Format("3:04PM MST 1/2/2006"))
 
 	battlesresult := ""
-	for num, battle := range battles {
+	for num, _ := range battles {
 		hightstar := -1
 		hightstars := "\U0001F4A4\U0001F4A4\U0001F4A4"
 		called := false
-		lineresult := fmt.Sprintf("||%d.%s ", num+1, battle.Scoutstate)
+		lineresult := fmt.Sprintf("||%d.%s ", num+1, "")
 		for _, caller := range acallers[num+1] {
 			if caller.Starstate > -1 && caller.Starstate < 4 {
 				if caller.Starstate > hightstar {

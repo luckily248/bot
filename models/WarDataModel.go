@@ -1,6 +1,7 @@
 package models
 
 import (
+	"errors"
 	"time"
 )
 
@@ -231,6 +232,30 @@ func DelWarDatabyWarid(warid int) (err error) {
 	}
 	_, err = stmt.Exec(warid)
 	if err != nil {
+		return
+	}
+	return
+}
+func DelCallbyid(warid int, position int, callername string) (err error) {
+	wardata := &WarDataModel{}
+	err = wardata.init()
+	if err != nil {
+		return
+	}
+	defer wardata.DB.Close()
+	stmt, err := wardata.DB.Prepare("delete from Caller where WarId=$1 AND BattleNo=$2 AND Callername=$3")
+	if err != nil {
+		return
+	}
+	result, err := stmt.Exec(warid, position, callername)
+	if err != nil {
+		return
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		return
+	} else if affected == 0 {
+		err = errors.New("you dont have any call on it")
 		return
 	}
 	return
