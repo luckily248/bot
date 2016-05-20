@@ -15,6 +15,14 @@ import (
 	"github.com/luckily248/bot/models"
 )
 
+var whitelist []string
+var token string
+
+func init() {
+	whitelist = []string{}
+	token = "376a2810f86a0133f8cb675ee1cd23ec"
+}
+
 //main
 func Run() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -43,10 +51,12 @@ func WarDataController(w http.ResponseWriter, r *http.Request) {
 		fmt.Printf("is empty\n")
 		return
 	}
-	if !strings.HasPrefix(rec.Text, "!") {
-		return
+	if strings.HasPrefix(rec.Text, "!") {
+		go handle(rec)
 	}
-	go handle(rec)
+	if strings.Contains(rec.Text, "removed") && rec.System {
+		go checkremove(rec)
+	}
 	return
 }
 func handle(rec models.GMrecModel) {
@@ -82,4 +92,59 @@ func httpPost(rep []byte) {
 		fmt.Println(err)
 	}
 	fmt.Println(string(body))
+}
+func checkremove(rec models.GMrecModel) {
+	name := strings.Split(rec.Text, " removed ")[0]
+	group, err := httpPostGetGroup(rec.Group_id)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	var remover_id string
+	for _, member := range group.Members {
+		if member.Nickname == name {
+			remover_id = member.User_id
+		}
+	}
+	if remover_id == "" {
+		fmt.Println("remover not found")
+		return
+	}
+	httpPostRemove(rec.Group_id, remover_id)
+}
+func httpPostRemove(group_id string, membership_id string) {
+
+	url := fmt.Sprintf("https://api.groupme.com/v3/groups/%s/members/%s/remove?token=%s", group_id, membership_id, token)
+	resp, err := http.Post(url,
+		"application/x-www-form-urlencoded",
+		strings.NewReader(""))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println(string(body))
+}
+func httpPostGetGroup(group_id string) (group models.GMrecGroupModel, err error) {
+	url := fmt.Sprintf("https://api.groupme.com/v3/groups/%s?token=%s", group_id, token)
+	resp, err := http.Post(url,
+		"application/x-www-form-urlencoded",
+		strings.NewReader(""))
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return
+	}
+	err = json.Unmarshal(body, &group)
+	if err != nil {
+		return
+	}
+	fmt.Printf("group:%v\n", group)
+	return
 }

@@ -73,7 +73,7 @@ func HandlecocText(rec models.GMrecModel) (reptext string, err error) {
 			}
 		}
 	}
-	err = errors.New("command false ,try ?help")
+	err = errors.New("command false ,try !help")
 	return
 }
 

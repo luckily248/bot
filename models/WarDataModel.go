@@ -66,7 +66,7 @@ func (this *Caller) GetStarstate() string {
 }
 
 func (this *WarDataModel) Tablename() string {
-	return "wardata"
+	return "wardatamodel"
 }
 
 func (this *WarDataModel) init() (err error) {
