@@ -119,17 +119,17 @@ func checkremove(rec models.GMrecModel) {
 		return
 	}
 	if isWhiteList(remover_id) {
+		fmt.Println("in whitelist")
 		return
 	}
 	httpPostRemove(rec.Group_id, remover_id)
 	return
 }
 func httpPostRemove(group_id string, membership_id string) {
-
 	url := fmt.Sprintf("https://api.groupme.com/v3/groups/%s/members/%s/remove?token=%s", group_id, membership_id, token)
 	resp, err := http.Post(url,
 		"application/x-www-form-urlencoded",
-		strings.NewReader(""))
+		nil)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -142,6 +142,7 @@ func httpPostRemove(group_id string, membership_id string) {
 }
 func httpPostGetGroup(group_id string) (group models.GMrecGroupModel, err error) {
 	url := fmt.Sprintf("https://api.groupme.com/v3/groups/%s?token=%s", group_id, token)
+	fmt.Println(url)
 	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
