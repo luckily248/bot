@@ -65,14 +65,17 @@
 package models
 
 type GMrecGroupModel struct {
+	Response Group
+}
+type Group struct {
 	Id              string
 	Name            string
 	Type            string
 	Description     string
 	Image_url       string
 	Creator_user_id string
-	Created_at      string
-	Updated_at      string
+	Created_at      int
+	Updated_at      int
 	Members         []Member
 	Share_url       string
 }
@@ -81,4 +84,5 @@ type Member struct {
 	Nickname  string
 	muted     bool
 	Image_url string
+	Id        string
 }

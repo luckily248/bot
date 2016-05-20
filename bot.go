@@ -18,8 +18,16 @@ import (
 var whitelist []string
 var token string
 
+func isWhiteList(id string) bool {
+	for _, wid := range whitelist {
+		if wid == id {
+			return true
+		}
+	}
+	return false
+}
 func init() {
-	whitelist = []string{}
+	whitelist = []string{"135326188"}
 	token = "376a2810f86a0133f8cb675ee1cd23ec"
 }
 
@@ -101,16 +109,20 @@ func checkremove(rec models.GMrecModel) {
 		return
 	}
 	var remover_id string
-	for _, member := range group.Members {
+	for _, member := range group.Response.Members {
 		if member.Nickname == name {
-			remover_id = member.User_id
+			remover_id = member.Id
 		}
 	}
 	if remover_id == "" {
 		fmt.Println("remover not found")
 		return
 	}
+	if isWhiteList(remover_id) {
+		return
+	}
 	httpPostRemove(rec.Group_id, remover_id)
+	return
 }
 func httpPostRemove(group_id string, membership_id string) {
 
@@ -130,9 +142,7 @@ func httpPostRemove(group_id string, membership_id string) {
 }
 func httpPostGetGroup(group_id string) (group models.GMrecGroupModel, err error) {
 	url := fmt.Sprintf("https://api.groupme.com/v3/groups/%s?token=%s", group_id, token)
-	resp, err := http.Post(url,
-		"application/x-www-form-urlencoded",
-		strings.NewReader(""))
+	resp, err := http.Get(url)
 	if err != nil {
 		fmt.Println(err)
 	}
