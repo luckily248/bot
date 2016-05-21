@@ -73,6 +73,15 @@ func HandlecocText(rec models.GMrecModel) (reptext string, err error) {
 			}
 		}
 	}
+	for _, handler := range mainhandler.admincommands {
+		for _, com := range handler.getCommands() {
+			//fmt.Printf("com:%s\n", com)
+			if strings.EqualFold(reccomfix[0], com) {
+				reptext, err = handler.handle(reccomfix)
+				return
+			}
+		}
+	}
 	err = errors.New("command false ,try !help")
 	return
 }
