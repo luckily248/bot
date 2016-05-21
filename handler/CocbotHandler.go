@@ -386,7 +386,7 @@ func (this *AdminCallHandler) handle(text []string) (result string, err error) {
 	if calledtime.Before(content.Begintime) {
 		calledtime = content.Begintime
 	}
-
+	calledtime = calledtime.Add(24 * time.Hour)
 	if newcallnum == -1 {
 		newcallp := &models.Caller{content.Id, num1, name, -1, calledtime}
 		err = models.AddCaller(newcallp)
