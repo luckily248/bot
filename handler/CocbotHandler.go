@@ -16,7 +16,7 @@ var zerostar []string
 var onestar []string
 var twostar []string
 var threestar []string
-var whitelist []string
+var adminlist []string
 
 func init() {
 	zerostar = []string{
@@ -32,11 +32,11 @@ func init() {
 	threestar = []string{
 		"Nice hit!!",
 		"Well play"}
-	whitelist = []string{"8681334", "33577284", "23564677", ""} //law patt tom
+	adminlist = []string{"8681334", "33577284", "23564677", "33586990", "3267007", ""} //law patt tom luck mcb shab
 
 }
-func IsWhiteList(name string) bool {
-	for _, wname := range whitelist {
+func IsAdmin(name string) bool {
+	for _, wname := range adminlist {
 		if wname == name {
 			return true
 		}
@@ -78,8 +78,9 @@ func HandlecocText(rec models.GMrecModel) (reptext string, err error) {
 }
 
 type MainHandler struct {
-	allcommands []CocbotHandler
-	rec         models.GMrecModel
+	allcommands   []CocbotHandler
+	admincommands []CocbotHandler
+	rec           models.GMrecModel
 }
 
 func (this *MainHandler) init(rec models.GMrecModel) {
@@ -93,6 +94,9 @@ func (this *MainHandler) init(rec models.GMrecModel) {
 	this.allcommands = append(this.allcommands, &CallHandler{})
 	this.allcommands = append(this.allcommands, &TimerHandler{})
 	this.allcommands = append(this.allcommands, &OpenedwarHandler{})
+	this.admincommands = make([]CocbotHandler, 0)
+	this.admincommands = append(this.admincommands, &AdminCallHandler{})
+	this.admincommands = append(this.admincommands, &AdminDelcallHandler{})
 	this.rec = rec
 	return
 }
@@ -115,7 +119,13 @@ type HelpHandler struct {
 
 func (this *HelpHandler) handle(text []string) (result string, err error) {
 	resultslice := make([]string, 0)
-	resultslice = append(resultslice, "commands list:")
+	resultslice = append(resultslice, "admin commands list:")
+	resultslice = append(resultslice, "--------------")
+	for _, handler := range mainhandler.admincommands {
+		resultslice = append(resultslice, handler.getHelp())
+	}
+	resultslice = append(resultslice, "--------------")
+	resultslice = append(resultslice, "common commands list:")
 	resultslice = append(resultslice, "--------------")
 	for _, handler := range mainhandler.allcommands {
 		resultslice = append(resultslice, handler.getHelp())
@@ -329,6 +339,77 @@ func (this *ScoutHandler) getHelp() string {
 	return "!scout [:number]\n for someone need scout \n usage:\n !scout 1"
 }
 
+type AdminCallHandler struct {
+}
+
+func (this *AdminCallHandler) handle(text []string) (result string, err error) {
+	if !IsAdmin(mainhandler.rec.User_id) {
+		err = errors.New("you arent administer")
+		return
+	}
+	if len(text) < 3 {
+		err = errors.New("i need more info\n" + this.getHelp())
+		return
+	}
+	groupname := mainhandler.getGroupName()
+	if groupname == "" {
+		err = errors.New("group not found groupid:" + mainhandler.rec.Group_id)
+		return
+	}
+	content, err := models.GetWarDatabyclanname(groupname)
+	if err != nil {
+		fmt.Println(err.Error())
+		err = errors.New("server error")
+		return
+	}
+	if !content.IsEnable {
+		result = "no war being"
+		return
+	}
+	num1, err := strconv.Atoi(text[1])
+	if err != nil {
+		err = errors.New("arg1 need a number \n" + this.getHelp())
+		return
+	}
+	name := strings.Join(text[2:len(text)], " ")
+	newcallnum := -1
+	acallers, err := models.GetAllCallerbyId(content.Id)
+	if err != nil {
+		return
+	}
+	for num, call := range acallers[num1] {
+		if call.Callername == name {
+			newcallnum = num
+		}
+	}
+	calledtime := time.Now()
+	if calledtime.Before(content.Begintime) {
+		calledtime = content.Begintime
+	}
+
+	if newcallnum == -1 {
+		newcallp := &models.Caller{content.Id, num1, name, -1, calledtime}
+		err = models.AddCaller(newcallp)
+	} else {
+		acallers[num1][newcallnum].Calledtime = calledtime
+		err = models.UpdateCaller(acallers[num1][newcallnum])
+	}
+
+	if err != nil {
+		fmt.Println(err.Error())
+		err = errors.New("server error")
+		return
+	}
+	result = fmt.Sprintf("%s was assigned to call #%d by %s", name, num1, mainhandler.rec.Name)
+	return
+}
+func (this *AdminCallHandler) getCommands() []string {
+	return []string{"!scall"}
+}
+func (this *AdminCallHandler) getHelp() string {
+	return "!scall [:number]\n for assign someone to call (no timer here) \n usage:\n !scall 1 name"
+}
+
 type CallHandler struct {
 }
 
@@ -499,10 +580,24 @@ func (this *DelwarHandler) getHelp() string {
 	return "!del [:number] \n for del a War \n usage: \n !del 5 "
 }
 
-type DelcallHandler struct {
+//for admin
+type AdminDelcallHandler struct {
 }
 
-func (this *DelcallHandler) handle(text []string) (result string, err error) {
+func (this *AdminDelcallHandler) handle(text []string) (result string, err error) {
+	if !IsAdmin(mainhandler.rec.User_id) {
+		err = errors.New("you arent administer")
+		return
+	}
+	if len(text) < 2 {
+		err = errors.New("i need more info\n" + this.getHelp())
+		return
+	}
+	num, err := strconv.Atoi(text[1])
+	if err != nil || num < 0 {
+		err = errors.New("arg2 must be number\n" + this.getHelp())
+		return
+	}
 	groupname := mainhandler.getGroupName()
 	if groupname == "" {
 		err = errors.New("group not found groupid:" + mainhandler.rec.Group_id)
@@ -518,6 +613,27 @@ func (this *DelcallHandler) handle(text []string) (result string, err error) {
 		result = "no war being"
 		return
 	}
+
+	err = models.DelCallbyNo(content.Id, num)
+	if err != nil {
+		return
+	}
+	result = fmt.Sprintf("Calls in #%d are all deleted ", num, mainhandler.rec.Name)
+
+	return
+
+}
+func (this *AdminDelcallHandler) getCommands() []string {
+	return []string{"!sdel"}
+}
+func (this *AdminDelcallHandler) getHelp() string {
+	return "!sdel [:number] \n for del all call in position\n usage: \n !sdel 5 "
+}
+
+type DelcallHandler struct {
+}
+
+func (this *DelcallHandler) handle(text []string) (result string, err error) {
 	if len(text) < 2 {
 		err = errors.New("i need more info\n" + this.getHelp())
 		return
@@ -528,21 +644,27 @@ func (this *DelcallHandler) handle(text []string) (result string, err error) {
 		return
 	}
 
-	caller := ""
-	if IsWhiteList(mainhandler.rec.User_id) {
-		err = models.DelCallbyNo(content.Id, num)
-	} else {
-		err = models.DelCallbyid(content.Id, num, mainhandler.rec.Name)
-		caller = mainhandler.rec.Name
+	groupname := mainhandler.getGroupName()
+	if groupname == "" {
+		err = errors.New("group not found groupid:" + mainhandler.rec.Group_id)
+		return
 	}
+	content, err := models.GetWarDatabyclanname(groupname)
+	if err != nil {
+		fmt.Println(err.Error())
+		err = errors.New("server error")
+		return
+	}
+	if !content.IsEnable {
+		result = "no war being"
+		return
+	}
+
+	err = models.DelCallbyid(content.Id, num, mainhandler.rec.Name)
 	if err != nil {
 		return
 	}
-	if caller != "" {
-		result = fmt.Sprintf("Call in #%d by %s is deleted ", num, caller)
-	} else {
-		result = fmt.Sprintf("Call in #%d all deleted ", num)
-	}
+	result = fmt.Sprintf("Call in #%d by %s is deleted ", num, mainhandler.rec.Name)
 
 	return
 
