@@ -95,15 +95,15 @@ type MainHandler struct {
 func (this *MainHandler) init(rec models.GMrecModel) {
 	this.allcommands = make([]CocbotHandler, 0)
 	this.allcommands = append(this.allcommands, &HelpHandler{})
-	this.allcommands = append(this.allcommands, &NewwarHandler{})
-	this.allcommands = append(this.allcommands, &EditwarHandler{})
+	this.allcommands = append(this.allcommands, &CallHandler{})
 	this.allcommands = append(this.allcommands, &DelcallHandler{})
 	this.allcommands = append(this.allcommands, &ShowwarHandler{})
 	this.allcommands = append(this.allcommands, &StarHandler{})
-	this.allcommands = append(this.allcommands, &CallHandler{})
 	this.allcommands = append(this.allcommands, &TimerHandler{})
 	this.allcommands = append(this.allcommands, &OpenedwarHandler{})
 	this.admincommands = make([]CocbotHandler, 0)
+	this.admincommands = append(this.admincommands, &NewwarHandler{})
+	this.admincommands = append(this.admincommands, &EditwarHandler{})
 	this.admincommands = append(this.admincommands, &AdminCallHandler{})
 	this.admincommands = append(this.admincommands, &AdminDelcallHandler{})
 	this.rec = rec
@@ -153,6 +153,10 @@ type NewwarHandler struct {
 }
 
 func (this *NewwarHandler) handle(text []string) (result string, err error) {
+	if !IsAdmin(mainhandler.rec.User_id) {
+		err = errors.New("you arent administer")
+		return
+	}
 	//fmt.Printf("len text:%d\n", len(text))
 	if len(text) < 3 {
 		err = errors.New("i need more info\n" + this.getHelp())
@@ -627,7 +631,7 @@ func (this *AdminDelcallHandler) handle(text []string) (result string, err error
 	if err != nil {
 		return
 	}
-	result = fmt.Sprintf("Calls in #%d are all deleted ", num, mainhandler.rec.Name)
+	result = fmt.Sprintf("Calls in #%d are all deleted by %s", num, mainhandler.rec.Name)
 
 	return
 
@@ -689,6 +693,10 @@ type EditwarHandler struct {
 }
 
 func (this *EditwarHandler) handle(text []string) (result string, err error) {
+	if !IsAdmin(mainhandler.rec.User_id) {
+		err = errors.New("you arent administer")
+		return
+	}
 	groupname := mainhandler.getGroupName()
 	if groupname == "" {
 		err = errors.New("group not found groupid:" + mainhandler.rec.Group_id)
