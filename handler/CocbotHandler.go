@@ -111,7 +111,7 @@ func (this *MainHandler) init(rec models.GMrecModel) {
 }
 
 func (this *MainHandler) getGroupName() string {
-	mapforGroupName := map[string]string{"19624531": "luckbot", "15529154": "Cha siew", "12000977": "Cha siew", "14806448": "Cha siew"}
+	mapforGroupName := map[string]string{"19624531": "luckbot", "15529154": "Cha siew", "12000977": "Cha siew", "14806448": "Cha siew", "21088731": "CS FTB Force"}
 	for k, v := range mapforGroupName {
 		//fmt.Printf("gid:%s\n", this.rec.Group_id)
 		//fmt.Printf("gn:%s\n", v)
