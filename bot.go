@@ -73,8 +73,32 @@ func handle(rec models.GMrecModel) {
 	fmt.Printf("reptextlen:%d\n", textlen)
 	reptextslice := []string{}
 	if textlen > 512 {
-		reptextslice = append(reptextslice, reptext[0:512])
-		reptextslice = append(reptextslice, reptext[513:len(reptext)])
+		reptestarry := strings.Split(reptext, "\n")
+		couttextlen := 0
+		splitint := []int{}
+		for t, row := range reptestarry {
+			couttextlen = couttextlen + utf8.RuneCountInString(row)
+			if couttextlen > 512 {
+				if t != len(reptestarry)-1 {
+					splitint = append(splitint, t)
+					fmt.Printf("spliti:%d\n", t)
+					couttextlen = 0
+				}
+			}
+		}
+
+		for i, v := range splitint {
+			j, k := 0, 0
+			if i == 0 {
+				j = 0
+			} else {
+				j = splitint[i-1] + 1
+			}
+			fmt.Printf("j n k:%d:%d\n", j, k)
+			reptextslice = append(reptextslice, strings.Join(reptestarry[j:v], ""))
+		}
+		temps := strings.Join(reptestarry[splitint[len(splitint)-1]:len(splitint)], "")
+		reptextslice = append(reptextslice, temps)
 	} else {
 		reptextslice = append(reptextslice, reptext)
 	}
