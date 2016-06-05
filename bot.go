@@ -69,23 +69,31 @@ func WarDataController(w http.ResponseWriter, r *http.Request) {
 }
 func handle(rec models.GMrecModel) {
 	reptext, err := handler.HandlecocText(rec)
-	fmt.Printf("reptextlen:%d\n", utf8.RuneCountInString(reptext))
-	rep := &models.GMrepModel{}
-	rep.InitbyGID(rec.Group_id)
-	if err != nil {
-		rep.SetText(err.Error())
-		fmt.Printf("err:%s\n", err.Error())
+	textlen := utf8.RuneCountInString(reptext)
+	fmt.Printf("reptextlen:%d\n", textlen)
+	reptextslice := []string{}
+	if textlen > 512 {
+		reptextslice = append(reptextslice, reptext[0:512])
+		reptextslice = append(reptextslice, reptext[513:len(reptext)])
 	} else {
-		rep.SetText(reptext)
-		fmt.Printf("ob:%v\n", rep)
+		reptextslice = append(reptextslice, reptext)
 	}
-	buff, err := json.Marshal(rep)
 	if err != nil {
-		fmt.Printf("err:%s\n", err.Error())
-		return
+		reptextslice = append(reptextslice, err.Error())
 	}
-	fmt.Println(string(buff))
-	httpPost(buff)
+	for _, text := range reptextslice {
+		rep := &models.GMrepModel{}
+		rep.InitbyGID(rec.Group_id)
+		rep.SetText(text)
+		fmt.Printf("ob:%v\n", rep)
+		buff, err := json.Marshal(rep)
+		if err != nil {
+			fmt.Printf("err:%s\n", err.Error())
+			return
+		}
+		fmt.Println(string(buff))
+		httpPost(buff)
+	}
 }
 func httpPost(rep []byte) {
 	resp, err := http.Post("https://api.groupme.com/v3/bots/post",
