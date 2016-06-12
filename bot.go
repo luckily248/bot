@@ -97,8 +97,12 @@ func handle(rec models.GMrecModel) {
 			fmt.Printf("j n k:%d:%d\n", j, k)
 			reptextslice = append(reptextslice, strings.Join(reptestarry[j:v], "\n"))
 		}
-		temps := strings.Join(reptestarry[splitint[len(splitint)-1]:len(reptestarry)], "\n")
-		reptextslice = append(reptextslice, temps)
+		if len(splitint) == 0 {
+			reptextslice = append(reptextslice, reptext)
+		} else {
+			temps := strings.Join(reptestarry[splitint[len(splitint)-1]:len(reptestarry)], "\n")
+			reptextslice = append(reptextslice, temps)
+		}
 	} else {
 		reptextslice = append(reptextslice, reptext)
 	}
