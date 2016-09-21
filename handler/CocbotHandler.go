@@ -32,7 +32,7 @@ func init() {
 	threestar = []string{
 		"Nice hit!!",
 		"Well play"}
-	adminlist = []string{"8681334", "33577284", "23564677", "33586990", "3267007", "35524165", "32363734", "32149981"} //law patt tom luck mcb shab ginger steve
+	adminlist = []string{"8681334", "33577284", "23564677", "33586990", "9500856", "3267007", "35524165", "32363734", "32149981", "29641190"} //law patt tom luck mcb shab ginger steve Rich Janean
 
 }
 func IsAdmin(name string) bool {
