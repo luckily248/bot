@@ -27,8 +27,8 @@ func isWhiteList(id string) bool {
 	return false
 }
 func init() {
-	whitelist = []string{"135326188", "125657347", "72121797", "130143199", "72125169", "125253862", "140087332", "92363924", "93138188", "148356894", "148348169", "148348419", "148346929", "92801557", "194224467", "194225395", "194225402", "194225401"}
-	// id =law in luckbot patt tom law luck shab morecowbell cata Janean rich in cs luck ginger steve law in ftb scrim GingerNaut Caleb Mike
+	whitelist = []string{"135326188", "125657347", "72121797", "130143199", "72125169", "125253862", "140087332", "92363924", "93138188", "148356894", "148348169", "148348419", "148346929", "92801557", "194224467", "194225395", "194225402", "194225401", "205131724"}
+	// id =law in luckbot patt tom law luck shab morecowbell cata Janean rich in cs luck ginger steve law in ftb scrim GingerNaut Caleb Mike amymarie
 	token = "376a2810f86a0133f8cb675ee1cd23ec"
 }
 
